@@ -1,0 +1,10 @@
+{
+  "name": "num-bomb-pages",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/solver.test.mjs",
+    "check": "node --check src/solver.js && node --check src/app.js"
+  }
+}

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="数字炸弹">
+    <title>数字炸弹解码器</title>
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./src/styles.css">
+  </head>
+  <body>
+    <main class="app-shell" aria-live="polite">
+      <header class="topbar">
+        <div>
+          <h1>数字炸弹解码器</h1>
+          <p class="subtle">4 位数字 · 只按位置正确数反馈</p>
+        </div>
+        <div class="status-pill" id="statusPill">
+          <span class="status-dot"></span>
+          进行中
+        </div>
+      </header>
+
+      <section class="hero-panel" aria-labelledby="recommendTitle">
+        <div class="section-line">
+          <h2 id="recommendTitle">推荐猜测</h2>
+          <span class="strategy-chip" id="strategyChip">信息熵最大</span>
+        </div>
+        <div class="guess-display" id="guessDisplay">----</div>
+        <div class="metrics-row">
+          <span>候选 <strong id="candidateCount">10,000</strong></span>
+          <span>置信 <strong id="confidenceText">0.00%</strong></span>
+        </div>
+        <p class="hint-text" id="reasonText">等待第一次反馈。</p>
+      </section>
+
+      <section class="feedback-panel" aria-labelledby="feedbackTitle">
+        <div class="section-line">
+          <h2 id="feedbackTitle">位置正确个数</h2>
+          <span class="small-note">输入绿灯数</span>
+        </div>
+        <div class="feedback-grid" id="feedbackButtons">
+          <button type="button" data-feedback="0">0</button>
+          <button type="button" data-feedback="1">1</button>
+          <button type="button" data-feedback="2">2</button>
+          <button type="button" data-feedback="3">3</button>
+          <button type="button" data-feedback="4">4</button>
+        </div>
+        <div class="command-row">
+          <button class="secondary-button" type="button" id="undoButton">↶ 撤销</button>
+          <button class="secondary-button" type="button" id="resetButton">↻ 重置</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="settingsTitle">
+        <details open>
+          <summary>
+            <h2 id="settingsTitle">参数设置</h2>
+            <span>常用</span>
+          </summary>
+
+          <div class="control-block">
+            <label class="field-label" for="presetSelect">预设方案</label>
+            <select id="presetSelect">
+              <option value="default">普通人默认局</option>
+              <option value="defensive">防反套路局</option>
+              <option value="strong-human">强赌人性局</option>
+              <option value="custom">自定义</option>
+            </select>
+          </div>
+
+          <div class="slider-stack" id="commonSliders"></div>
+
+          <div class="control-block">
+            <span class="field-label">策略模式</span>
+            <div class="segmented" id="modeControl">
+              <button type="button" data-mode="entropy">熵最大</button>
+              <button type="button" data-mode="expected">押高概率</button>
+              <button type="button" data-mode="minimax">防最坏</button>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel" aria-labelledby="advancedTitle">
+        <details>
+          <summary>
+            <h2 id="advancedTitle">高级参数</h2>
+            <span>展开</span>
+          </summary>
+          <div class="slider-stack" id="advancedSliders"></div>
+          <div class="toggle-stack">
+            <label class="toggle-row">
+              <span>
+                <strong>允许非候选探针</strong>
+                <small>为了信息量，可以猜已不可能是答案的数字。</small>
+              </span>
+              <input type="checkbox" id="allowProbeGuess">
+            </label>
+            <label class="toggle-row">
+              <span>
+                <strong>反馈错误容忍</strong>
+                <small>允许历史反馈里最多错一次。</small>
+              </span>
+              <select id="maxFeedbackErrors">
+                <option value="0">0 次</option>
+                <option value="1">1 次</option>
+              </select>
+            </label>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel" aria-labelledby="candidatesTitle">
+        <div class="section-line">
+          <h2 id="candidatesTitle">候选列表</h2>
+          <span class="small-note">Top 10</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>答案</th>
+                <th>概率</th>
+                <th>累计</th>
+              </tr>
+            </thead>
+            <tbody id="candidateTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="historyTitle">
+        <div class="section-line">
+          <h2 id="historyTitle">历史记录</h2>
+          <span class="small-note" id="roundText">0 轮</span>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </section>
+
+      <footer class="footer-note">
+        规则：答案范围 0000-9999，允许重复数字，只反馈位置正确数量。
+      </footer>
+    </main>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
