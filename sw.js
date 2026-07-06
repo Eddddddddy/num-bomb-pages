@@ -1,4 +1,4 @@
-const CACHE_NAME = "num-bomb-pages-v3";
+const CACHE_NAME = "num-bomb-pages-v4";
 const APP_FILES = [
   "./",
   "./index.html",
