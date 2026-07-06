@@ -1,10 +1,11 @@
-const CACHE_NAME = "num-bomb-pages-v5";
+const CACHE_NAME = "num-bomb-pages-v6";
 const APP_FILES = [
   "./",
   "./index.html",
   "./src/styles.css",
   "./src/app.js",
   "./src/solver.js",
+  "./src/solver-worker.js",
   "./src/help-content.js",
   "./manifest.webmanifest",
   "./assets/icon.svg"

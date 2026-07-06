@@ -20,7 +20,7 @@
         </div>
         <div class="status-pill" id="statusPill">
           <span class="status-dot"></span>
-          进行中
+          <span id="statusText">进行中</span>
         </div>
       </header>
 
@@ -35,6 +35,23 @@
           <span>置信 <strong id="confidenceText">0.00%</strong></span>
         </div>
         <p class="hint-text" id="reasonText">等待第一次反馈。</p>
+        <div
+          class="progress-panel"
+          id="calculationProgress"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          hidden
+        >
+          <div class="progress-copy">
+            <span id="progressText">全量搜索 0%</span>
+            <span id="progressCount">0 / 0</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
       </section>
 
       <section class="feedback-panel" aria-labelledby="feedbackTitle">

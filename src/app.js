@@ -6,7 +6,7 @@ import {
   getTopCandidates,
   modeLabel,
   rebuildState,
-  recommendGuess,
+  recommendGuessWithProgress,
   rewindState,
   summarizeState,
   updateConfigFromPreset
@@ -114,6 +114,11 @@ const elements = {
   reasonText: document.querySelector("#reasonText"),
   strategyChip: document.querySelector("#strategyChip"),
   statusPill: document.querySelector("#statusPill"),
+  statusText: document.querySelector("#statusText"),
+  calculationProgress: document.querySelector("#calculationProgress"),
+  progressFill: document.querySelector("#progressFill"),
+  progressText: document.querySelector("#progressText"),
+  progressCount: document.querySelector("#progressCount"),
   feedbackButtons: document.querySelector("#feedbackButtons"),
   undoButton: document.querySelector("#undoButton"),
   resetButton: document.querySelector("#resetButton"),
@@ -134,12 +139,17 @@ const elements = {
 
 let presetKey = "default";
 let state = restoreState();
-let currentRecommendation = recommendGuess(state);
+let currentRecommendation = createPlaceholderRecommendation("computing");
+let solverWorker = null;
+let recommendationJobId = 0;
+let isComputing = false;
+let calculationProgress = { completed: 0, total: 1, percent: 0 };
 
 renderSliderControls(elements.commonSliders, commonControls);
 renderSliderControls(elements.advancedSliders, advancedControls);
 bindEvents();
 render();
+requestRecommendation();
 registerServiceWorker();
 
 function restoreState() {
@@ -200,13 +210,13 @@ function renderSliderControls(container, controls) {
 function bindEvents() {
   elements.feedbackButtons.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-feedback]");
-    if (!button || currentRecommendation.guess === "----") {
+    if (!button || isComputing || currentRecommendation.guess === "----") {
       return;
     }
     state = applyFeedback(state, currentRecommendation.guess, button.dataset.feedback);
     presetKey = elements.presetSelect.value;
     persistState();
-    render();
+    requestRecommendation();
   });
 
   elements.undoButton.addEventListener("click", () => {
@@ -215,13 +225,13 @@ function bindEvents() {
     }
     state = rewindState(state);
     persistState();
-    render();
+    requestRecommendation();
   });
 
   elements.resetButton.addEventListener("click", () => {
     state = createInitialState(state.config);
     persistState();
-    render();
+    requestRecommendation();
   });
 
   elements.presetSelect.addEventListener("change", () => {
@@ -232,7 +242,7 @@ function bindEvents() {
       state = reconfigure(state.config);
     }
     persistState();
-    render();
+    requestRecommendation();
   });
 
   document.addEventListener("input", (event) => {
@@ -243,7 +253,7 @@ function bindEvents() {
     setConfigValue(slider.dataset.slider, Number(slider.value));
     presetKey = "custom";
     persistState();
-    render();
+    requestRecommendation();
   });
 
   elements.modeControl.addEventListener("click", (event) => {
@@ -257,7 +267,7 @@ function bindEvents() {
     });
     presetKey = "custom";
     persistState();
-    render();
+    requestRecommendation();
   });
 
   elements.allowProbeGuess.addEventListener("change", () => {
@@ -267,7 +277,7 @@ function bindEvents() {
     });
     presetKey = "custom";
     persistState();
-    render();
+    requestRecommendation();
   });
 
   elements.maxFeedbackErrors.addEventListener("change", () => {
@@ -277,7 +287,7 @@ function bindEvents() {
     });
     presetKey = "custom";
     persistState();
-    render();
+    requestRecommendation();
   });
 
   document.addEventListener("click", (event) => {
@@ -320,7 +330,6 @@ function reconfigure(nextConfig) {
 }
 
 function render() {
-  currentRecommendation = recommendGuess(state);
   const summary = summarizeState(state);
   const confidence = currentRecommendation.reason === "hit-threshold"
     ? currentRecommendation.score
@@ -334,10 +343,12 @@ function render() {
   elements.statusPill.classList.toggle("is-empty", summary.candidateCount === 0);
   elements.presetSelect.value = presetKey;
   elements.undoButton.disabled = state.history.length === 0;
+  document.body.classList.toggle("is-computing", isComputing);
 
   renderControls();
   renderCandidates(getTopCandidates(state, 10));
   renderHistory();
+  renderProgress();
 }
 
 function renderControls() {
@@ -355,6 +366,10 @@ function renderControls() {
 
   elements.allowProbeGuess.checked = state.config.allowProbeGuess;
   elements.maxFeedbackErrors.value = String(state.config.maxFeedbackErrors ?? 0);
+
+  for (const button of elements.feedbackButtons.querySelectorAll("button")) {
+    button.disabled = isComputing || currentRecommendation.guess === "----";
+  }
 }
 
 function getConfigValue(path) {
@@ -403,6 +418,12 @@ function renderHistory() {
 }
 
 function reasonText(recommendation) {
+  if (recommendation.reason === "computing") {
+    return "正在全量搜索最佳猜测。";
+  }
+  if (recommendation.reason === "error") {
+    return "计算失败，请刷新页面后重试。";
+  }
   if (recommendation.reason === "hit-threshold") {
     return "最高概率已经超过阈值，建议直接猜它。";
   }
@@ -429,6 +450,108 @@ function registerServiceWorker() {
       navigator.serviceWorker.register("./sw.js").catch(() => {});
     });
   }
+}
+
+function requestRecommendation() {
+  recommendationJobId += 1;
+  const jobId = recommendationJobId;
+  isComputing = true;
+  calculationProgress = { completed: 0, total: 1, percent: 0 };
+  currentRecommendation = createPlaceholderRecommendation("computing");
+  render();
+
+  if (solverWorker) {
+    solverWorker.terminate();
+  }
+
+  solverWorker = createSolverWorker();
+  if (solverWorker) {
+    solverWorker.onmessage = (event) => handleWorkerMessage(event.data, jobId);
+    solverWorker.postMessage({ id: jobId, state });
+    return;
+  }
+
+  recommendGuessWithProgress(state, {
+    onProgress: (progress) => {
+      if (jobId !== recommendationJobId) {
+        return;
+      }
+      calculationProgress = progress;
+      renderProgress();
+    }
+  })
+    .then((recommendation) => finishRecommendation(jobId, recommendation))
+    .catch(() => finishRecommendation(jobId, createPlaceholderRecommendation("error")));
+}
+
+function createSolverWorker() {
+  if (!("Worker" in window)) {
+    return null;
+  }
+
+  try {
+    return new Worker(new URL("./solver-worker.js", import.meta.url), {
+      type: "module"
+    });
+  } catch {
+    return null;
+  }
+}
+
+function handleWorkerMessage(message, jobId) {
+  if (message.id !== jobId || jobId !== recommendationJobId) {
+    return;
+  }
+
+  if (message.type === "progress") {
+    calculationProgress = message.progress;
+    renderProgress();
+    return;
+  }
+
+  if (message.type === "result") {
+    finishRecommendation(jobId, message.recommendation);
+    return;
+  }
+
+  if (message.type === "error") {
+    finishRecommendation(jobId, createPlaceholderRecommendation("error"));
+  }
+}
+
+function finishRecommendation(jobId, recommendation) {
+  if (jobId !== recommendationJobId) {
+    return;
+  }
+
+  currentRecommendation = recommendation;
+  isComputing = false;
+  calculationProgress = { completed: 1, total: 1, percent: 1 };
+  render();
+}
+
+function renderProgress() {
+  const percent = Math.max(0, Math.min(1, calculationProgress.percent || 0));
+  const percentText = `${Math.round(percent * 100)}%`;
+  elements.calculationProgress.hidden = !isComputing;
+  elements.calculationProgress.setAttribute("aria-valuenow", String(Math.round(percent * 100)));
+  elements.progressFill.style.width = percentText;
+  elements.progressText.textContent = `全量搜索 ${percentText}`;
+  elements.progressCount.textContent = `${formatInteger(calculationProgress.completed || 0)} / ${formatInteger(calculationProgress.total || 0)}`;
+  elements.statusText.textContent = isComputing
+    ? "计算中"
+    : state.candidates.length === 0
+      ? "异常"
+      : "进行中";
+}
+
+function createPlaceholderRecommendation(reason) {
+  return {
+    guess: "----",
+    score: 0,
+    reason,
+    candidate: false
+  };
 }
 
 function openHelp(helpId) {

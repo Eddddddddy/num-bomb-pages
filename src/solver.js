@@ -235,35 +235,12 @@ export function recommendGuess(state, options = {}) {
     };
   }
 
-  const candidateSet = new Set(state.candidates);
-  const candidateWeights = state.candidates.map((code) => ({
-    code,
-    weight: computePrior(code, config)
-  }));
-  const totalMass =
-    candidateWeights.reduce((sum, item) => sum + item.weight, 0) || 1;
+  const context = createSearchContext(state, config);
   const pool = buildGuessPool(state, options);
   let best = null;
 
   for (const guess of pool) {
-    const bins = [0, 0, 0, 0, 0];
-    for (const item of candidateWeights) {
-      bins[scoreFeedback(guess, item.code)] += item.weight;
-    }
-
-    const rawScore = scoreBins(bins, totalMass, config.mode);
-    const isCandidate = candidateSet.has(guess);
-    const penalty = isCandidate ? 1 : config.nonCandidatePenalty;
-    const score = rawScore * penalty;
-    const challenger = {
-      guess,
-      score,
-      rawScore,
-      reason: config.mode,
-      candidate: isCandidate,
-      bins: bins.map((mass) => mass / totalMass)
-    };
-
+    const challenger = evaluateGuess(guess, context, config);
     if (isBetterGuess(challenger, best, config)) {
       best = challenger;
     }
@@ -275,6 +252,105 @@ export function recommendGuess(state, options = {}) {
     reason: "fallback",
     candidate: true
   };
+}
+
+export async function recommendGuessWithProgress(state, options = {}) {
+  const onProgress = typeof options.onProgress === "function"
+    ? options.onProgress
+    : () => {};
+
+  if (state.candidates.length === 0) {
+    onProgress({ completed: 1, total: 1, percent: 1 });
+    return {
+      guess: "----",
+      score: 0,
+      reason: "no-candidates",
+      candidate: false
+    };
+  }
+
+  const config = cloneConfig(state.config);
+  const top = getTopCandidates(state, 1)[0];
+  if (top && top.probability >= config.hitThreshold) {
+    onProgress({ completed: 1, total: 1, percent: 1 });
+    return {
+      guess: top.code,
+      score: top.probability,
+      reason: "hit-threshold",
+      candidate: true
+    };
+  }
+
+  const context = createSearchContext(state, config);
+  const pool = buildGuessPool(state, options);
+  const total = pool.length || 1;
+  const chunkSize = Math.max(1, options.chunkSize ?? 160);
+  let best = null;
+
+  for (let start = 0; start < pool.length; start += chunkSize) {
+    const end = Math.min(pool.length, start + chunkSize);
+    for (let index = start; index < end; index += 1) {
+      const challenger = evaluateGuess(pool[index], context, config);
+      if (isBetterGuess(challenger, best, config)) {
+        best = challenger;
+      }
+    }
+
+    const completed = end;
+    onProgress({
+      completed,
+      total,
+      percent: completed / total
+    });
+    await yieldToEventLoop();
+  }
+
+  return best ?? {
+    guess: top?.code ?? state.candidates[0],
+    score: top?.probability ?? 0,
+    reason: "fallback",
+    candidate: true
+  };
+}
+
+function createSearchContext(state, config) {
+  const candidateSet = new Set(state.candidates);
+  const candidateWeights = state.candidates.map((code) => ({
+    code,
+    weight: computePrior(code, config)
+  }));
+  const totalMass =
+    candidateWeights.reduce((sum, item) => sum + item.weight, 0) || 1;
+
+  return {
+    candidateSet,
+    candidateWeights,
+    totalMass
+  };
+}
+
+function evaluateGuess(guess, context, config) {
+  const bins = [0, 0, 0, 0, 0];
+  for (const item of context.candidateWeights) {
+    bins[scoreFeedback(guess, item.code)] += item.weight;
+  }
+
+  const rawScore = scoreBins(bins, context.totalMass, config.mode);
+  const isCandidate = context.candidateSet.has(guess);
+  const penalty = isCandidate ? 1 : config.nonCandidatePenalty;
+  const score = rawScore * penalty;
+  return {
+    guess,
+    score,
+    rawScore,
+    reason: config.mode,
+    candidate: isCandidate,
+    bins: bins.map((mass) => mass / context.totalMass)
+  };
+}
+
+function yieldToEventLoop() {
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 function computeHumanWeight(code, config) {

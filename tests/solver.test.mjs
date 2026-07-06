@@ -8,6 +8,7 @@ import {
   createInitialState,
   getTopCandidates,
   recommendGuess,
+  recommendGuessWithProgress,
   scoreFeedback,
   updateConfigFromPreset
 } from "../src/solver.js";
@@ -113,4 +114,30 @@ runTest("default search uses enough probes to solve strong-human 7145 in under 1
   }
 
   assert.fail("strong-human preset should solve 7145 within 9 rounds by default");
+});
+
+async function runAsyncTest(name, fn) {
+  try {
+    await fn();
+    console.log(`PASS ${name}`);
+  } catch (error) {
+    console.error(`FAIL ${name}`);
+    throw error;
+  }
+}
+
+await runAsyncTest("progress recommendation reports chunked progress and matches sync result", async () => {
+  const state = createInitialState(updateConfigFromPreset(DEFAULT_CONFIG, "strong-human"));
+  const progressEvents = [];
+  const asyncRecommendation = await recommendGuessWithProgress(state, {
+    sampleLimit: 120,
+    chunkSize: 25,
+    onProgress: (progress) => progressEvents.push(progress)
+  });
+  const syncRecommendation = recommendGuess(state, { sampleLimit: 120 });
+
+  assert.equal(asyncRecommendation.guess, syncRecommendation.guess);
+  assert.ok(progressEvents.length >= 2, "expected multiple progress updates");
+  assert.equal(progressEvents.at(-1).completed, progressEvents.at(-1).total);
+  assert.equal(progressEvents.at(-1).percent, 1);
 });

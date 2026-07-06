@@ -170,6 +170,37 @@ h2 {
   font-size: 13px;
 }
 
+.progress-panel {
+  margin-top: 12px;
+}
+
+.progress-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-track {
+  height: 8px;
+  margin-top: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #edf2f5;
+}
+
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: 8px;
+  background: var(--accent);
+  transition: width 120ms ease-out;
+}
+
 .feedback-panel,
 .panel,
 .footer-note {
@@ -197,6 +228,11 @@ h2 {
 .feedback-grid button:active {
   transform: translateY(1px);
   background: var(--surface-2);
+}
+
+.feedback-grid button:disabled {
+  cursor: wait;
+  opacity: 0.46;
 }
 
 .feedback-grid button[data-feedback="4"] {
@@ -501,6 +537,10 @@ td strong {
   box-shadow: none;
   font-size: 12px;
   line-height: 1.45;
+}
+
+.is-computing .guess-display {
+  color: #5d6b75;
 }
 
 @media (min-width: 680px) {
