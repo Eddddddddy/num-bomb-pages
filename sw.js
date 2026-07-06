@@ -1,4 +1,4 @@
-const CACHE_NAME = "num-bomb-pages-v6";
+const CACHE_NAME = "num-bomb-pages-v7";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const APP_FILES = [
   "./src/solver.js",
   "./src/solver-worker.js",
   "./src/help-content.js",
+  "./build-info.js",
   "./manifest.webmanifest",
   "./assets/icon.svg"
 ];

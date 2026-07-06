@@ -119,6 +119,8 @@ const elements = {
   progressFill: document.querySelector("#progressFill"),
   progressText: document.querySelector("#progressText"),
   progressCount: document.querySelector("#progressCount"),
+  buildVersion: document.querySelector("#buildVersion"),
+  buildTime: document.querySelector("#buildTime"),
   feedbackButtons: document.querySelector("#feedbackButtons"),
   undoButton: document.querySelector("#undoButton"),
   resetButton: document.querySelector("#resetButton"),
@@ -148,6 +150,7 @@ let calculationProgress = { completed: 0, total: 1, percent: 0 };
 renderSliderControls(elements.commonSliders, commonControls);
 renderSliderControls(elements.advancedSliders, advancedControls);
 bindEvents();
+renderBuildInfo();
 render();
 requestRecommendation();
 registerServiceWorker();
@@ -543,6 +546,31 @@ function renderProgress() {
     : state.candidates.length === 0
       ? "异常"
       : "进行中";
+}
+
+function renderBuildInfo() {
+  const buildInfo = window.NUM_BOMB_BUILD ?? {};
+  const version = buildInfo.version ?? "unknown";
+  const builtAt = buildInfo.builtAt ?? "unknown";
+
+  elements.buildVersion.textContent = version;
+  elements.buildTime.textContent = formatBuildTime(builtAt);
+  if (builtAt !== "unknown") {
+    elements.buildTime.setAttribute("datetime", builtAt);
+  }
+}
+
+function formatBuildTime(value) {
+  if (!value || value === "local-dev" || value === "unknown") {
+    return value || "unknown";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return value.replace("T", " ").replace("Z", " UTC");
 }
 
 function createPlaceholderRecommendation(reason) {

@@ -172,7 +172,12 @@
       </section>
 
       <footer class="footer-note">
-        规则：答案范围 0000-9999，允许重复数字，只反馈位置正确数量。
+        <p>规则：答案范围 0000-9999，允许重复数字，只反馈位置正确数量。</p>
+        <p class="build-meta" id="buildMeta">
+          版本 <span id="buildVersion">读取中</span>
+          <span aria-hidden="true">·</span>
+          编译 <time id="buildTime">读取中</time>
+        </p>
       </footer>
     </main>
 
@@ -186,6 +191,7 @@
       </div>
     </dialog>
 
+    <script src="./build-info.js"></script>
     <script type="module" src="./src/app.js"></script>
   </body>
 </html>

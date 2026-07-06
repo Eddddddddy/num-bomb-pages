@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/solver.test.mjs && node tests/docs-help.test.mjs && node tests/service-worker.test.mjs && node tests/ui-copy-style.test.mjs && node tests/progress-ui.test.mjs",
+    "test": "node tests/solver.test.mjs && node tests/docs-help.test.mjs && node tests/service-worker.test.mjs && node tests/ui-copy-style.test.mjs && node tests/progress-ui.test.mjs && node tests/build-info.test.mjs",
     "check": "node --check src/solver.js && node --check src/help-content.js && node --check src/solver-worker.js && node --check src/app.js"
   }
 }

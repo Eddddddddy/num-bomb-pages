@@ -539,6 +539,14 @@ td strong {
   line-height: 1.45;
 }
 
+.footer-note p + p {
+  margin-top: 6px;
+}
+
+.build-meta {
+  font-variant-numeric: tabular-nums;
+}
+
 .is-computing .guess-display {
   color: #5d6b75;
 }
