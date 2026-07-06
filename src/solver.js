@@ -377,7 +377,7 @@ function isHighLowAlternating(digits) {
 
 function buildGuessPool(state, options) {
   const config = cloneConfig(state.config);
-  const sampleLimit = options.sampleLimit ?? chooseSampleLimit(state.candidates.length);
+  const sampleLimit = options.sampleLimit ?? ALL_CODES.length;
   const pool = new Set();
 
   for (const item of getTopCandidates(state, Math.min(80, state.candidates.length))) {
@@ -401,20 +401,11 @@ function buildGuessPool(state, options) {
   return Array.from(pool);
 }
 
-function chooseSampleLimit(candidateCount) {
-  if (candidateCount > 5000) {
-    return 260;
-  }
-  if (candidateCount > 1500) {
-    return 360;
-  }
-  if (candidateCount > 300) {
-    return 520;
-  }
-  return 800;
-}
-
 function representativeCodes(limit) {
+  if (limit >= ALL_CODES.length) {
+    return ALL_CODES;
+  }
+
   const anchors = [
     "0123",
     "0246",

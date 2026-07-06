@@ -96,3 +96,21 @@ runTest("recommendation returns a legal four-digit guess before any feedback", (
   assert.match(recommendation.guess, /^\d{4}$/);
   assert.ok(recommendation.score >= 0);
 });
+
+runTest("default search uses enough probes to solve strong-human 7145 in under 10 rounds", () => {
+  const target = "7145";
+  const config = updateConfigFromPreset(DEFAULT_CONFIG, "strong-human");
+  let state = createInitialState(config);
+
+  for (let round = 1; round <= 9; round += 1) {
+    const recommendation = recommendGuess(state);
+    const feedback = scoreFeedback(recommendation.guess, target);
+    if (feedback === 4) {
+      assert.equal(recommendation.guess, target);
+      return;
+    }
+    state = applyFeedback(state, recommendation.guess, feedback);
+  }
+
+  assert.fail("strong-human preset should solve 7145 within 9 rounds by default");
+});
