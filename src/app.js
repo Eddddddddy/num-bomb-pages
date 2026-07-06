@@ -11,6 +11,7 @@ import {
   summarizeState,
   updateConfigFromPreset
 } from "./solver.js";
+import { getHelpItem } from "./help-content.js";
 
 const STORAGE_KEY = "num-bomb-pages-state-v1";
 
@@ -124,7 +125,11 @@ const elements = {
   maxFeedbackErrors: document.querySelector("#maxFeedbackErrors"),
   candidateTable: document.querySelector("#candidateTable"),
   historyList: document.querySelector("#historyList"),
-  roundText: document.querySelector("#roundText")
+  roundText: document.querySelector("#roundText"),
+  helpDialog: document.querySelector("#helpDialog"),
+  helpTitle: document.querySelector("#helpTitle"),
+  helpBody: document.querySelector("#helpBody"),
+  helpCloseButton: document.querySelector("#helpCloseButton")
 };
 
 let presetKey = "default";
@@ -168,10 +173,16 @@ function persistState() {
 function renderSliderControls(container, controls) {
   container.innerHTML = controls
     .map(
-      (control) => `
-        <label class="slider-row" data-control="${control.id}">
-          <span class="slider-label">${control.label}</span>
+      (control) => {
+        const inputId = `slider-${control.id.replace(/[^a-z0-9]+/gi, "-")}`;
+        return `
+        <div class="slider-row" data-control="${control.id}">
+          <span class="label-line slider-label">
+            <label for="${inputId}">${control.label}</label>
+            <button class="help-button" type="button" data-help-id="${control.id}" aria-label="查看${control.label}说明">?</button>
+          </span>
           <input
+            id="${inputId}"
             type="range"
             min="${control.min}"
             max="${control.max}"
@@ -179,8 +190,9 @@ function renderSliderControls(container, controls) {
             data-slider="${control.id}"
           >
           <output data-output="${control.id}"></output>
-        </label>
-      `
+        </div>
+      `;
+      }
     )
     .join("");
 }
@@ -266,6 +278,26 @@ function bindEvents() {
     presetKey = "custom";
     persistState();
     render();
+  });
+
+  document.addEventListener("click", (event) => {
+    const helpButton = event.target.closest("button[data-help-id]");
+    if (!helpButton) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    openHelp(helpButton.dataset.helpId);
+  });
+
+  elements.helpCloseButton.addEventListener("click", () => {
+    elements.helpDialog.close();
+  });
+
+  elements.helpDialog.addEventListener("click", (event) => {
+    if (event.target === elements.helpDialog) {
+      elements.helpDialog.close();
+    }
   });
 }
 
@@ -397,6 +429,13 @@ function registerServiceWorker() {
       navigator.serviceWorker.register("./sw.js").catch(() => {});
     });
   }
+}
+
+function openHelp(helpId) {
+  const item = getHelpItem(helpId);
+  elements.helpTitle.textContent = item.title;
+  elements.helpBody.textContent = item.body;
+  elements.helpDialog.showModal();
 }
 
 window.__numBomb = {

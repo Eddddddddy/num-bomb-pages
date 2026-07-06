@@ -63,7 +63,10 @@
           </summary>
 
           <div class="control-block">
-            <label class="field-label" for="presetSelect">预设方案</label>
+            <div class="label-line">
+              <label class="field-label" for="presetSelect">预设方案</label>
+              <button class="help-button" type="button" data-help-id="preset" aria-label="查看预设方案说明">?</button>
+            </div>
             <select id="presetSelect">
               <option value="default">普通人默认局</option>
               <option value="defensive">防反套路局</option>
@@ -75,7 +78,10 @@
           <div class="slider-stack" id="commonSliders"></div>
 
           <div class="control-block">
-            <span class="field-label">策略模式</span>
+            <div class="label-line">
+              <span class="field-label">策略模式</span>
+              <button class="help-button" type="button" data-help-id="mode" aria-label="查看策略模式说明">?</button>
+            </div>
             <div class="segmented" id="modeControl">
               <button type="button" data-mode="entropy">熵最大</button>
               <button type="button" data-mode="expected">押高概率</button>
@@ -95,14 +101,20 @@
           <div class="toggle-stack">
             <label class="toggle-row">
               <span>
-                <strong>允许非候选探针</strong>
+                <span class="label-line">
+                  <strong>允许非候选探针</strong>
+                  <button class="help-button" type="button" data-help-id="allowProbeGuess" aria-label="查看允许非候选探针说明">?</button>
+                </span>
                 <small>为了信息量，可以猜已不可能是答案的数字。</small>
               </span>
               <input type="checkbox" id="allowProbeGuess">
             </label>
             <label class="toggle-row">
               <span>
-                <strong>反馈错误容忍</strong>
+                <span class="label-line">
+                  <strong>反馈错误容忍</strong>
+                  <button class="help-button" type="button" data-help-id="maxFeedbackErrors" aria-label="查看反馈错误容忍说明">?</button>
+                </span>
                 <small>允许历史反馈里最多错一次。</small>
               </span>
               <select id="maxFeedbackErrors">
@@ -146,6 +158,16 @@
         规则：答案范围 0000-9999，允许重复数字，只反馈位置正确数量。
       </footer>
     </main>
+
+    <dialog class="help-dialog" id="helpDialog">
+      <div class="help-dialog-inner">
+        <div class="section-line">
+          <h2 id="helpTitle">说明</h2>
+          <button class="icon-button" type="button" id="helpCloseButton" aria-label="关闭说明">×</button>
+        </div>
+        <p id="helpBody"></p>
+      </div>
+    </dialog>
 
     <script type="module" src="./src/app.js"></script>
   </body>

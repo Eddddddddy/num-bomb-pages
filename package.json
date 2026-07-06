@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/solver.test.mjs",
-    "check": "node --check src/solver.js && node --check src/app.js"
+    "test": "node tests/solver.test.mjs && node tests/docs-help.test.mjs",
+    "check": "node --check src/solver.js && node --check src/help-content.js && node --check src/app.js"
   }
 }

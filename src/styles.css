@@ -258,6 +258,46 @@ details > summary span {
   font-weight: 720;
 }
 
+.label-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.help-button,
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--strong-border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-weight: 800;
+}
+
+.help-button {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.icon-button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.help-button:active,
+.icon-button:active {
+  background: var(--surface-2);
+}
+
 .control-block {
   display: grid;
   gap: 8px;
@@ -362,6 +402,36 @@ select {
 
 .toggle-row select {
   width: 86px;
+}
+
+.help-dialog {
+  width: min(calc(100vw - 28px), 520px);
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+}
+
+.help-dialog::backdrop {
+  background: rgba(16, 24, 32, 0.34);
+}
+
+.help-dialog-inner {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 18px 44px rgba(16, 24, 32, 0.22);
+}
+
+.help-dialog p {
+  margin-top: 12px;
+  color: #33424c;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 .table-wrap {
